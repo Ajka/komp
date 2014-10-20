@@ -15,14 +15,14 @@ define void dfs(int i,int[] visited,int n,int[][] adjMatrix)
 define void initialize_matrix(int[][] a,n){	
    for (i := 0; i < n; i++ ){
       for (j := 0; j < n; j++ ){
-         a[i][j]=0;
+         a[i][j]:=0;
       }
    }
 }
 
 define void readmartix(int[][] a,x,y){	
-   a[x][y]=1;
-   a[y][x]=1;
+   a[x][y]:=1;
+   a[y][x]:=1;
 }
 
 def void main()
