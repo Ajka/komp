@@ -1,0 +1,27 @@
+extern def void print(int i);
+extern def void read(int i);
+
+def bool primes(int n){
+    for(int i:=2;i*i<=n;i+=2) {
+        if(n%i==0)
+            ret false;
+    }
+    ret true;
+}
+
+def void main()
+{   
+      int n;
+      boolean isPrime; 
+      read(n);
+
+      if (n >= 2) {
+            print("2");
+            for (int i := 3; i <=n; i++) {
+                isPrime:=primes(i);
+                if(isPrime==true){
+                   print(i);
+                }
+            }
+      }
+}

@@ -1,0 +1,62 @@
+extern def void print(int i);
+extern def void read(int i);
+
+define void dfs(int i,int[] visited,int n,int[][] adjMatrix)
+{
+   int j;
+   visited[i] := true;
+      for ( j := 0; j < n; j++ )
+      {
+	 if (adjMatrix[i][j] > 0 and !visited[j] )
+            dfs(j,visited,n,adjMatrix);
+      }
+}
+
+define void initialize_matrix(int[][] a,n){	
+   for (i := 0; i < n; i++ ){
+      for (j := 0; j < n; j++ ){
+         a[i][j]=0;
+      }
+   }
+}
+
+define void readmartix(int[][] a,x,y){	
+   a[x][y]=1;
+   a[y][x]=1;
+}
+
+def void main()
+{
+   int n;
+   int m;
+   read(n);
+   read(m);
+   int[n][m] a;
+
+   initialize_matrix(a,n);
+
+   int x;
+   int y;
+   for (i := 0; i < m; i++ ){
+      read(x);
+      read(y);
+      readmartix(a,x,y);
+   }
+   
+   boolean visited[n];
+   for (i := 0; i < n; i++ ){
+      visited[i]:=false;
+   }
+   dfs(0,visited,n,a);
+    
+   bool connected:=true;
+   for (i := 0; i < n; i++ ){
+      if(visited[i]==false){
+          connected:=false;
+          br; 
+      }
+   }
+    
+   print(connected);
+
+}
