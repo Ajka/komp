@@ -3,8 +3,9 @@ extern def void read(int i);
 
 def bool primes(int n){
     for(int i:=2;i*i<=n;i+=2) {
-        if(n%i==0)
+        if(n%i==0){
             ret false;
+        }    
     }
     ret true;
 }
