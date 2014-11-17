@@ -1,7 +1,7 @@
 extern def void print(int i);
 extern def void read(int i);
 
-define void dfs(int i,int[] visited,int n,int[][] adjMatrix)
+def void dfs(int i,int[] visited,int n,int[][] adjMatrix)
 {
    int j;
    visited[i] := true;
@@ -12,7 +12,7 @@ define void dfs(int i,int[] visited,int n,int[][] adjMatrix)
       }
 }
 
-define void initialize_matrix(int[][] a,n){	
+def void initialize_matrix(int[][] a,n){	
    for (i := 0; i < n; i++ ){
       for (j := 0; j < n; j++ ){
          a[i][j]:=0;
@@ -20,7 +20,7 @@ define void initialize_matrix(int[][] a,n){
    }
 }
 
-define void readmartix(int[][] a,x,y){	
+def void readmartix(int[][] a,x,y){	
    a[x][y]:=1;
    a[y][x]:=1;
 }
