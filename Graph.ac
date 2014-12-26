@@ -1,26 +1,27 @@
 extern def void print(int i);
 extern def void read(int i);
 
-define void dfs(int i,int[] visited,int n,int[][] adjMatrix)
+def void dfs(int i,int[] visited,int n,int[][] adjMatrix)
 {
    int j;
    visited[i] := true;
-      for ( j := 0; j < n; j++ )
+      for ( int j := 0; j < n; j+=1 )
       {
-	 if (adjMatrix[i][j] > 0 and !visited[j] )
+	 if (adjMatrix[i][j] > 0 and visited[j]==false ){
             dfs(j,visited,n,adjMatrix);
+	 }
       }
 }
 
-define void initialize_matrix(int[][] a,n){	
-   for (i := 0; i < n; i++ ){
-      for (j := 0; j < n; j++ ){
+def void initializeMatrix(int[][] a,int n){	
+   for (int i := 0; i < n; i+=1 ){
+      for (int j := 0; j < n; j+=1 ){
          a[i][j]:=0;
       }
    }
 }
 
-define void readmartix(int[][] a,x,y){	
+def void readmartix(int[][] a,int x,int y){	
    a[x][y]:=1;
    a[y][x]:=1;
 }
@@ -33,30 +34,31 @@ def void main()
    read(m);
    int[n][m] a;
 
-   initialize_matrix(a,n);
+   initializeMatrix(a,n);
 
    int x;
    int y;
-   for (i := 0; i < m; i++ ){
+   for (int i := 0; i < m; i+=1 ){
       read(x);
       read(y);
       readmartix(a,x,y);
    }
    
-   boolean visited[n];
-   for (i := 0; i < n; i++ ){
+   bool visited[n];
+   for (int i := 0; i < n; i+=1 ){
       visited[i]:=false;
    }
    dfs(0,visited,n,a);
     
    bool connected:=true;
-   for (i := 0; i < n; i++ ){
+   for (int i := 0; i < n; i+=1 ){
       if(visited[i]==false){
           connected:=false;
-          br; 
+          break; 
       }
    }
     
    print(connected);
 
 }
+

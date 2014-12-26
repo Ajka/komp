@@ -50,12 +50,12 @@ def void main() {
     read(n);
     int[n] A;
     
-    for (int i := 0; i < n; i++) {
+    for (int i := 0; i < n; i+=1) {
 	read(A[i]);
     }
 
     mergesort(A, 0, n - 1);
-    for (int i := 0; i < n; i++) {
+    for (int i := 0; i < n; i+=1) {
 	print(A[i]);
     }
 }

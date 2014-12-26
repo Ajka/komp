@@ -3,8 +3,9 @@ extern def void read(int i);
 
 def bool primes(int n){
     for(int i:=2;i*i<=n;i+=2) {
-        if(n%i==0)
+        if(n%i==0){
             ret false;
+        }    
     }
     ret true;
 }
@@ -12,12 +13,12 @@ def bool primes(int n){
 def void main()
 {   
       int n;
-      boolean isPrime; 
+      bool isPrime; 
       read(n);
 
       if (n >= 2) {
             print("2");
-            for (int i := 3; i <=n; i++) {
+            for (int i := 3; i <=n; i+=1) {
                 isPrime:=primes(i);
                 if(isPrime==true){
                    print(i);
@@ -25,3 +26,4 @@ def void main()
             }
       }
 }
+
