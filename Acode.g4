@@ -1,107 +1,90 @@
 grammar Acode;
 
-init: row* block*;
+init: statements;
 
-row:
-    'extern' 'def' type function ';'
-    |assign ';'
-    ;
+statements: statement (NEWLINE statement)*;
 
-type:
-    ('void'|'int'|'str'|'bool'|'char'|'double') #basicType    
-    | type ('['']')+ #array
-    | type ('[' expr ']')+ #alloc_array
-    ;
-
-function: ID '('attrs')';
-
-attrs: (type var (',' type var)*)?;
-
-block: definition '{' in_block+ '}' | if_st;
-
-definition: 'def' type function| loop;
-
-in_block: 
-    line ';'
-    | block
-    ;    
-
-line:
-    var_def
-    |assign
-    |ret 
-    |statement 
-    |func_call
-    |expr
-    ;
-assign: var ':=' expr; 		
-var_def: type var (':=' expr)?; 
-
-func_call:
-    ID '(' params ')'
-    |ID '(' '"' val '"' ')'
-    ;
-
-params: (expr (',' expr)*)?;
-loop:
-    
-    |while_st
-    |for_st
-    ;
-
-if_st:'if' '(' expr ')' '{' in_block+ '}' ('elseif' '(' expr ')' '{' in_block+ '}' )* ('else' '{' in_block+ '}')?;
-while_st: 'while' '(' expr ')';
-
-for_st: 'for' '(' var_def ';' expr ';' statement ')';
-
-
-var: ID
-     | ID ('['']')+ 
-     | ID ('[' expr ']')+ 
+statement:
+     type lvalue (ASSIGN expression)? ';'                  # AssignVar
+     | lvalue ASSIGN expression ';'               	# Assign
+     | expression                                       # Print
+     | 'ret' (expression)?	';' 			# Ret
+     | block              				#Block_st
+     | IF expression block ('elseif' expression block )* ('else' block)?  # If
+     | WHILE PAREN_OPEN expression PAREN_CLOSE block    # While 
+     | FOR PAREN_OPEN statement expression';' own_assign PAREN_CLOSE block	#For
+     | 'def' type name '(' args ')' block		# FunctionDef
+     |                                                  # Emp
+     | own_assign (';')?	  			# OwnAssing
+     |'extern' 'def' type lvalue '('args')' ';' 	#Extern
+     |'break' ';'					#Break
      ;
-ret : 'ret' expr?;
-statement: 
-    ID '+=' val
-    |ID '-=' val
-    |ID '*=' val
-    |ID '/=' val		
+
+block:  BLOCK_START statements BLOCK_END ;
+
+args: (type lvalue (',' type lvalue)*)?;
+lvalue: 
+     STRING
+     |STRING ('['']')+ 
+     |STRING ('[' expression ']')+ 
+     ;
+
+name: STRING;
+
+type:   ('void'|'int'|'str'|'bool'|'char'|'double') #basicType    
+    | type ('['']')+ #array
+    | type ('[' expression ']')+ #alloc_array
     ;
-expr:
-    
-     expr op=(MUL | DIV |MOD ) expr
-    | expr op=(ADD | SUB) expr  
-    | expr op=AND expr
-    |expr op=(EQ | NE | LE | GE | GT | LT)  expr 
-    | '(' expr ')'
-    |val
-    |func_call
-    ;
+
+param_call: (expression (',' expression)*)? ;
+
+own_assign: lvalue op = ( '+='|'-='|'*=' |'/=' | '%=' |'^=') expression;
+
+expression:
+					
+      op=('-'|'+') expression                            # Una
+     | name '(' param_call ')'	(';')? 		   	 # FuncCall
+     | expression op=EXP<assoc=right> expression         # Exp
+     | expression op=(DIV|MUL|MOD) expression            # Mul
+     | expression op=(ADD|SUB) expression                # Add
+     | op=NOT expression                                 # Not
+     | expression op=AND expression                      # And
+     | expression op=OR expression                       # Or
+     | expression op=(EQ| NE| LE| GE| GT| LT) expression  #Cmp
+     | PAREN_OPEN expression PAREN_CLOSE                 # Par
+     | lvalue						#Val
+     | STRING                                            # Var
+     | INT                                               # Int
+     
+     ;
+
 
 
 AND: 'and'| '&&';
 OR: 'or'| '||';
+NOT: 'not';
+NEWLINE:'\n';
+ASSIGN: ':=';
+BLOCK_START: '{';
+BLOCK_END: '}';
+IF: 'if';
+ELSE: 'else';
+WHILE: 'while';
+FOR: 'for';
 
-ID: ('a'..'z' | 'A'..'Z')([a-zA-Z0-9])* ;
-val : var # ValVar
-| INT # ValInt
-| DOUBLE # ValDouble
-| STR # ValString
-| CHAR # ValChar
-| BOOL # ValBool
-;
 
+PAREN_OPEN: '(';
+PAREN_CLOSE: ')';
 
+STRING: [a-zA-Z][a-zA-Z0-9]*;
 BOOL : 'false' | 'true';
 INT : NUMBER;
 DOUBLE : NUMBER '.' DIGIT*;
 STR : '"' (~'"')* '"';
 CHAR : '\'' (~'\'') '\'';
 NUMBER : '0' | [1-9]DIGIT*;
-DIGIT : [0-9];
+DIGIT: [0-9];
 WHITESPACE: [ |\n|\t] -> skip;
-
-
-
 
 ADD: '+';
 SUB: '-';
