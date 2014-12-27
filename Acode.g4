@@ -5,22 +5,21 @@ init: statements;
 statements: statement (NEWLINE statement)*;
 
 statement:
-     type lvalue (ASSIGN expression)? ';'                  # AssignVar
+     type lvalue ASSIGN expression ';'                  # AssignVar
      | lvalue ASSIGN expression ';'               	# Assign
      | expression                                       # Print
-     | 'ret' (expression)?	';' 			# Ret
-     | block              				#Block_st
-     | IF expression block ('elseif' expression block )* ('else' block)?  # If
-     | WHILE PAREN_OPEN expression PAREN_CLOSE block    # While 
-     | FOR PAREN_OPEN statement expression';' own_assign PAREN_CLOSE block	#For
-     | 'def' type name '(' args ')' block		# FunctionDef
+     | 'ret' expression	';' 				# Ret
+     | BLOCK_START statements BLOCK_END          	#Block
+     | IF expression statements ('elseif' expression statements )* ('else' statements)?  # If
+     | WHILE PAREN_OPEN expression PAREN_CLOSE statements    # While 
+     | FOR PAREN_OPEN statement expression';' own_assign PAREN_CLOSE statements	#For
+     | 'def' type name '(' args ')' BLOCK_START statements BLOCK_END		# FunctionDef
      |                                                  # Emp
      | own_assign (';')?	  			# OwnAssing
      |'extern' 'def' type lvalue '('args')' ';' 	#Extern
      |'break' ';'					#Break
      ;
 
-block:  BLOCK_START statements BLOCK_END ;
 
 args: (type lvalue (',' type lvalue)*)?;
 lvalue: 
@@ -40,8 +39,7 @@ param_call: (expression (',' expression)*)? ;
 
 own_assign: lvalue op = ( '+='|'-='|'*=' |'/=' | '%=' |'^=') expression;
 
-expression:
-					
+expression:				
       op=('-'|'+') expression                            # Una
      | name '(' param_call ')'	(';')? 		   	 # FuncCall
      | expression op=EXP<assoc=right> expression         # Exp
@@ -50,12 +48,11 @@ expression:
      | op=NOT expression                                 # Not
      | expression op=AND expression                      # And
      | expression op=OR expression                       # Or
-     | expression op=(EQ| NE| LE| GE| GT| LT) expression  #Cmp
+     | expression op=(EQ| NE| LE| GE| GT| LT) expression #Cmp
      | PAREN_OPEN expression PAREN_CLOSE                 # Par
-     | lvalue						#Val
      | STRING                                            # Var
      | INT                                               # Int
-     
+     | lvalue					 	 #Val
      ;
 
 
