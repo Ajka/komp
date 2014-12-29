@@ -546,7 +546,10 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                         ctx.op.getType()
                 );
                 CodeFragment statement_true = visit(ctx.block(0));
-                CodeFragment statement_false = visit(ctx.block(1));
+                CodeFragment statement_false=new CodeFragment();
+                if(ctx.block().size()>1){
+                    statement_false = visit(ctx.block(1));  
+                }
 
                 ST template = new ST(
                         "<condition_code>" + 
