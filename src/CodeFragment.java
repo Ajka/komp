@@ -2,7 +2,7 @@ import java.util.ArrayList;
 public class CodeFragment {
         private String code;
         private String register;
-        private int type;
+        //private String type;
 		private ArrayList<String> args;
 		//private ArrayList<String> params;
 
@@ -75,11 +75,11 @@ public class CodeFragment {
                 this.setRegister(fragment.getRegister());
         }	
 
-    public void setType(int type) {
+   	/*public void setType(String type) {
 			this.type = type;
 	}
 
-	public int getType() {
+	public String getType() {
  		return this.type;
- 	}
+ 	}*/
 }

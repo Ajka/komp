@@ -61,6 +61,7 @@ expression:
      | expression op=OR expression                       # Or
      | expression op=(EQ| NE| LE| GE| GT| LT) expression #Cmp
      | PAREN_OPEN expression PAREN_CLOSE                 # Par
+     | BOOL                                              # Bool
      | STRING                                            # Var
      | INT                                               # Int
      | lvalue					 	 #Val
@@ -84,8 +85,9 @@ FOR: 'for';
 PAREN_OPEN: '(';
 PAREN_CLOSE: ')';
 
-STRING: [a-zA-Z][a-zA-Z0-9]*;
 BOOL : 'false' | 'true';
+STRING: [a-zA-Z][a-zA-Z0-9]*;
+
 INT : NUMBER;
 DOUBLE : NUMBER '.' DIGIT*;
 STR : '"' (~'"')* '"';

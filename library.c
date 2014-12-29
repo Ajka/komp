@@ -1,16 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
      
-/*
-
-void print(bool b){
+/*void printBool(bool b){
  if(b){
     printf("YES");
  }else{
     printf("NO");
  }
-}*/
-     
+}
+*/     
 void print(int n){
 	printf("%d\n", n);
 }
