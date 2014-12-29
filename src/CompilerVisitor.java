@@ -7,7 +7,8 @@ import org.stringtemplate.v4.*;
 public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
        
 	private ArrayList< HashMap<String, String> > mem= new ArrayList< HashMap<String, String> >();
-	private ArrayList<Function> all_functions = new ArrayList<Function>();
+	private ArrayList<Function> functions = new ArrayList<Function>();
+    private ArrayList<Function> extern_functions = new ArrayList<Function>();
     private int labelIndex = 0;
     private int registerIndex = 0;
 	private int funcIndex = 0;
@@ -115,7 +116,9 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
             String name = ctx.name().getText(); 
             CodeFragment args = visit(ctx.args());
           
-          
+            Function f = new Function(type,name,args.args_list(),null);
+            extern_functions.add(f);  
+
         ST template = new ST(       
         "declare <type> @<name>(<args>)\n"
         );
@@ -152,6 +155,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
     @Override
     public CodeFragment visitFunctionDef(AcodeParser.FunctionDefContext ctx) {
         String name = ctx.name().getText();	
+        String type = ctx.type().getText(); 
         CodeFragment args = visit(ctx.args());
         CodeFragment body = visit(ctx.block());
 
@@ -159,8 +163,8 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         ret.appendCodeFragment(args);
         ret.appendCodeFragment(body);
 
-        Function f = new Function(name,args.args_list(),ret);
-        all_functions.add(f);	
+        Function f = new Function(type,name,args.args_list(),ret);
+        functions.add(f);	
 
               // ret.setRegister(body.getRegister());
         CodeFragment code = new CodeFragment();
@@ -184,30 +188,55 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
 		String name = ctx.name().getText();	
 		CodeFragment param = visit(ctx.param_call());
 		Function f=null;
-		for(int i =0;i<all_functions.size();i++){
-			if(name.equals(all_functions.get(i).name)){
-				f=all_functions.get(i);	
+        for(int i =0;i<extern_functions.size();i++){
+            if(name.equals(extern_functions.get(i).name)){
+                f=extern_functions.get(i); 
+            }
+        }
+
+		for(int i =0;i<functions.size();i++){
+			if(name.equals(functions.get(i).name)){
+				f=functions.get(i);	
 			}
 		}
 					
-		
+		//System.err.println("Fun"+f.name);
 		CodeFragment code = new CodeFragment();
-		ST template = new ST(		
-		"<params_code>"+	
-		"<register> = call i32 @<name>(<args>)\n"
-		);
+        String register=generateNewRegister();
+        //System.err.println("type: "+f.type());
+        ST template =null;
+        if(f.type().equals("void")){
+            template = new ST(       
+            "<params_code>"+    
+            "call void @<name>(<args>)\n"
+            );
+            template.add("params_code", param);
+            template.add("name", f.name);
+            template.add("args",param.args_code());
+       
+        }
+        else
+        {
+		    template = new ST(		
+		    "<params_code>"+	
+		    "<register> = call <type> @<name>(<args>)\n"
+		    );
+            
+            template.add("params_code", param);
+            template.add("name", f.name);
+            template.add("type",f.type());
+            template.add("args",param.args_code());
+            template.add("register", register);
 
-		String register=generateNewRegister();
-		template.add("params_code", param);
-		template.add("name", f.name);
-		template.add("args",param.args_code());
-		template.add("register", register);
+        }
 
+		
+        
 		code.addCode(template.render());
 		code.setRegister(register);
 		return code;
 	}
-
+/*
         @Override
         public CodeFragment visitPrint(AcodeParser.PrintContext ctx) {
                 CodeFragment code = visit(ctx.expression());
@@ -222,7 +251,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                 CodeFragment ret = new CodeFragment();
                 ret.addCode(template.render());
                 return ret;
-        }
+        }*/
 
         public CodeFragment generateBinaryOperatorCodeFragment(CodeFragment left, CodeFragment right, Integer operator) {
            // System.err.println("Lv:"+left+" Rv:"+right);
@@ -712,7 +741,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
 
 	public CodeFragment allFunctions(){
 		CodeFragment code = new CodeFragment();
-		for(Function f: all_functions){
+		for(Function f: functions){
 			ST template = new ST(
 				"define i32 @<name>(<args>) {\n"	+
 				"start:\n" + 

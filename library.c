@@ -1,10 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
      
-/*void read(int n) {
-    scanf("%d",&n); 
-    return n;
-}
+/*
 
 void print(bool b){
  if(b){
@@ -14,6 +11,10 @@ void print(bool b){
  }
 }*/
      
+void print(int n){
+	printf("%d\n", n);
+}
+
 int read() {
     int n;
     scanf("%d",&n); 
