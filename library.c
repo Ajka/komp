@@ -1,5 +1,24 @@
 #include <stdlib.h>
 #include <stdio.h>
+     
+/*void read(int n) {
+    scanf("%d",&n); 
+    return n;
+}
+
+void print(bool b){
+ if(b){
+    printf("YES");
+ }else{
+    printf("NO");
+ }
+}*/
+     
+int read() {
+    int n;
+    scanf("%d",&n); 
+    return n;
+}
 
 int printInt(int a) {
         printf("%d\n", a);

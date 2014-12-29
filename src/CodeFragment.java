@@ -2,8 +2,9 @@ import java.util.ArrayList;
 public class CodeFragment {
         private String code;
         private String register;
-	private ArrayList<String> args;
-	private ArrayList<String> params;
+        private int type;
+		private ArrayList<String> args;
+		//private ArrayList<String> params;
 
         public CodeFragment() {
                 this.code = "";
@@ -50,9 +51,35 @@ public class CodeFragment {
 		return code;
 		
 	}
+	public String extern_args_code(){
+		String code="";
+		if(args.size()>0){
+			code=code.concat("i32");
+			for(int i=1;i<args.size();i++){
+				code=code.concat(","+"i32 ");		
+			}
+		}
+		//System.err.println(arguments.size());
+		return code;
+		
+	}
 
+	/*public ArrayList<String> param_list(){
+		return this.params;
+
+	public void addParam(String x){
+		this.params.add(x);
+	}*/
 	public void appendCodeFragment(CodeFragment fragment) {
                 this.addCode(fragment);
                 this.setRegister(fragment.getRegister());
         }	
+
+    public void setType(int type) {
+			this.type = type;
+	}
+
+	public int getType() {
+ 		return this.type;
+ 	}
 }

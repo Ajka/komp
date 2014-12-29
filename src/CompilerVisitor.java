@@ -5,122 +5,167 @@ import org.stringtemplate.v4.*;
 
 
 public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
-       // private Map<String, String> mem = new HashMap<String, String>();
+       
 	private ArrayList< HashMap<String, String> > mem= new ArrayList< HashMap<String, String> >();
 	private ArrayList<Function> all_functions = new ArrayList<Function>();
-        private int labelIndex = 0;
-        private int registerIndex = 0;
+    private int labelIndex = 0;
+    private int registerIndex = 0;
 	private int funcIndex = 0;
-	
-        private String generateNewLabel() {
-                return String.format("L%d", this.labelIndex++);
+    private CodeFragment extern_def = new CodeFragment();
+
+    private String generateNewLabel() {
+        return String.format("L%d", this.labelIndex++);
+    }
+
+    private String generateNewRegister() {
+        return String.format("%%R%d", this.registerIndex++);
+    }
+
+    @Override
+    public CodeFragment visitAssign(AcodeParser.AssignContext ctx) {
+        CodeFragment value = visit(ctx.expression());
+        String mem_register="";
+        String code_stub = "";
+
+        String identifier = ctx.lvalue().getText();
+        int i=mem.size()-1;
+        while ((i>=0) && !mem.get(i).containsKey(identifier)) i--;
+        if (i>=0) {
+            mem_register = mem.get(i).get(identifier);
+        }else{
+            System.err.println(String.format("Error: idenifier '%s' does not exists", identifier));
         }
 
-        private String generateNewRegister() {
-                return String.format("%%R%d", this.registerIndex++);
-        }
+        ST template = new ST(
+            "<value_code>" + 
+            code_stub + 
+            "store i32 <value_register>, i32* <mem_register>\n"
+            );
+        template.add("value_code", value);
+        template.add("value_register", value.getRegister());
+        template.add("mem_register", mem_register);
+        CodeFragment ret = new CodeFragment();
+        ret.addCode(template.render());
+        ret.setRegister(value.getRegister());
+        return ret;
+    }
 
-        @Override
-        public CodeFragment visitAssign(AcodeParser.AssignContext ctx) {
-                CodeFragment value = visit(ctx.expression());
-                String mem_register="";
-                String code_stub = "";
+    @Override
+    public CodeFragment visitAssVar(AcodeParser.AssVarContext ctx) {
+        CodeFragment code = visit(ctx.assign_var());
+        return code;
+    }
 
-                String identifier = ctx.lvalue().getText();
-		int i=mem.size()-1;
-		while ((i>=0) && !mem.get(i).containsKey(identifier)) i--;
-                if (i>=0) {
-                        mem_register = mem.get(i).get(identifier);
-                }else{
-			System.err.println(String.format("Error: idenifier '%s' does not exists", identifier));
-		}
-            
-                ST template = new ST(
-                        "<value_code>" + 
-                        code_stub + 
-                        "store i32 <value_register>, i32* <mem_register>\n"
-                );
-                template.add("value_code", value);
-                template.add("value_register", value.getRegister());
-                template.add("mem_register", mem_register);
-                CodeFragment ret = new CodeFragment();
-                ret.addCode(template.render());
-                ret.setRegister(value.getRegister());
-                return ret;
+    @Override
+    public CodeFragment visitAssign_var(AcodeParser.Assign_varContext ctx) {
+        CodeFragment value = visit(ctx.expression());
+        String mem_register;
+        String code_stub = "";
+
+        String identifier = ctx.lvalue().getText();
+
+        if (!mem.get(mem.size()-1).containsKey(identifier)) {
+            mem_register = this.generateNewRegister();
+            code_stub = "<mem_register> = alloca i32\n";
+            mem.get(mem.size()-1).put(identifier, mem_register);
+        } else {
+            mem_register = mem.get(mem.size()-1).get(identifier);
+
         }
+        ST template = new ST(
+            "<value_code>" + 
+            code_stub + 
+            "store i32 <value_register>, i32* <mem_register>\n"
+            );
+        template.add("value_code", value);
+        template.add("value_register", value.getRegister());
+        template.add("mem_register", mem_register);
+        CodeFragment ret = new CodeFragment();
+        ret.addCode(template.render());
+        ret.setRegister(value.getRegister());
+        return ret;
+    }
+
+
+
+    @Override
+    public CodeFragment visitArgs(AcodeParser.ArgsContext ctx) {
+        CodeFragment ret = new CodeFragment();		
+        for(int i =0;i<ctx.lvalue().size();i++){
+            String mem_register=generateNewRegister();
+            String new_register=generateNewRegister();			
+            mem.get(mem.size()-1).put(ctx.lvalue(i).getText(), new_register);
+            ST template = new ST(
+            "<new_register> = alloca i32\n"+
+            "store i32 <mem_register>, i32* <new_register>\n"
+            );
+            ret.addArg(mem_register);
+            template.add("mem_register", mem_register);
+            template.add("new_register", new_register);
+            ret.addCode(template.render());
+            ret.setRegister(new_register);
+        }
+        return ret;
+    }
+
 
    @Override
-        public CodeFragment visitAssignVar(AcodeParser.AssignVarContext ctx) {
-                CodeFragment value = visit(ctx.expression());
-                String mem_register;
-                String code_stub = "";
-		
-                String identifier = ctx.lvalue().getText();
-		
-                if (!mem.get(mem.size()-1).containsKey(identifier)) {
-                        mem_register = this.generateNewRegister();
-                        code_stub = "<mem_register> = alloca i32\n";
-                        mem.get(mem.size()-1).put(identifier, mem_register);
-                } else {
-                        mem_register = mem.get(mem.size()-1).get(identifier);
-			
-                }
-                ST template = new ST(
-                        "<value_code>" + 
-                        code_stub + 
-                        "store i32 <value_register>, i32* <mem_register>\n"
-                );
-                template.add("value_code", value);
-                template.add("value_register", value.getRegister());
-                template.add("mem_register", mem_register);
-                CodeFragment ret = new CodeFragment();
-                ret.addCode(template.render());
-                ret.setRegister(value.getRegister());
-                return ret;
+        public CodeFragment visitExtern(AcodeParser.ExternContext ctx) {
+            String type = ctx.type().getText();     
+            String name = ctx.name().getText(); 
+            CodeFragment args = visit(ctx.args());
+          
+          
+        ST template = new ST(       
+        "declare <type> @<name>(<args>)\n"
+        );
+        
+        template.add("type", type_code(type));
+        template.add("name", name);
+        template.add("args",args.extern_args_code());
+        String register=generateNewRegister();
+        template.add("register", register);
+
+        extern_def.addCode(template.render());
+      //  extern_def.setRegister(register);
+        CodeFragment ret = new CodeFragment();
+        return ret;
+    }
+
+    public String type_code(String type){
+        String t = "";
+         switch (type) {
+            case "int":
+                t="i32";
+                break;
+            case "void":
+                t = "void";
+                break;
+            case "bool":
+                t = "i1";
+                break;    
         }
 
+        return t;
+    }
 
+    @Override
+    public CodeFragment visitFunctionDef(AcodeParser.FunctionDefContext ctx) {
+        String name = ctx.name().getText();	
+        CodeFragment args = visit(ctx.args());
+        CodeFragment body = visit(ctx.block());
 
-	@Override
-        public CodeFragment visitArgs(AcodeParser.ArgsContext ctx) {
-		CodeFragment ret = new CodeFragment();		
-		for(int i =0;i<ctx.lvalue().size();i++){
-			String mem_register=generateNewRegister();
-			String new_register=generateNewRegister();			
-			mem.get(mem.size()-1).put(ctx.lvalue(i).getText(), new_register);
-			 ST template = new ST(
-			 "<new_register> = alloca i32\n"+
-			 "store i32 <mem_register>, i32* <new_register>\n"
-			);
-			ret.addArg(mem_register);
-			template.add("mem_register", mem_register);
-			template.add("new_register", new_register);
-			ret.addCode(template.render());
-			ret.setRegister(new_register);
+        CodeFragment ret = new CodeFragment();
+        ret.appendCodeFragment(args);
+        ret.appendCodeFragment(body);
 
-		}
-             	return ret;
-	}
+        Function f = new Function(name,args.args_list(),ret);
+        all_functions.add(f);	
 
-
-	@Override
-        public CodeFragment visitFunctionDef(AcodeParser.FunctionDefContext ctx) {
-		String name = ctx.name().getText();	
-		CodeFragment args = visit(ctx.args());
-                CodeFragment body = visit(ctx.statements());
-
-                CodeFragment ret = new CodeFragment();
-		ret.appendCodeFragment(args);
-		ret.appendCodeFragment(body);
-
-		Function f = new Function(name,args.args_list(),ret);
-		all_functions.add(f);	
-		
               // ret.setRegister(body.getRegister());
-		CodeFragment code = new CodeFragment();
-                return code;
-
-        }
+        CodeFragment code = new CodeFragment();
+        return code;
+    }
 
 	@Override
         public CodeFragment visitParam_call(AcodeParser.Param_callContext ctx) {
@@ -131,7 +176,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
 			code.addCode(e);
 			code.addArg(e.getRegister());
 		}
-             	return code;
+        return code;
 	}
 	
 	@Override 
@@ -180,25 +225,77 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         }
 
         public CodeFragment generateBinaryOperatorCodeFragment(CodeFragment left, CodeFragment right, Integer operator) {
+           // System.err.println("Lv:"+left+" Rv:"+right);
                 String code_stub = "<ret> = <instruction> i32 <left_val>, <right_val>\n";
                 String instruction = "or";
                 switch (operator) {
+                        case AcodeParser.EQ:
+                                instruction = "eq";
+                                code_stub = "<ret> = icmp <instruction> i32 <left_val>, <right_val>\n";
+                                break;
+                        case AcodeParser.NE:
+                                instruction = "ne";
+                                code_stub = "<ret> = icmp <instruction> i32 <left_val>, <right_val>\n";
+                                break;
+                                
+                        case AcodeParser.LE:
+                                instruction = "sle";
+                                code_stub = "<ret> = icmp <instruction> i32 <left_val>, <right_val>\n";
+                                break;
+                                
+                        case AcodeParser.LT:
+                                instruction = "slt";
+                                code_stub = "<ret> = icmp <instruction> i32 <left_val>, <right_val>\n";
+                                break;
+                        case AcodeParser.GE:
+                                instruction = "sge";
+                                code_stub = "<ret> = icmp <instruction> i32 <left_val>, <right_val>\n";
+                                break;
+                                
+                        case AcodeParser.GT:
+                                instruction = "sgt";
+                                code_stub = "<ret> = icmp <instruction> i32 <left_val>, <right_val>\n";
+                                break;        
+                                                        
                         case AcodeParser.ADD:
                                 instruction = "add";
                                 break;
+                        case AcodeParser.ADD_A:
+                                instruction = "add";
+                                break;        
+
                         case AcodeParser.SUB:
                                 instruction = "sub";
                                 break;
+                        case AcodeParser.SUB_A:
+                                instruction = "sub";
+                                break;        
                         case AcodeParser.MUL:
                                 instruction = "mul";
                                 break;
+                        case AcodeParser.MUL_A:
+                                instruction = "mul";
+                                break;        
                         case AcodeParser.DIV:
                                 instruction = "sdiv";
                                 break;
+                        case AcodeParser.DIV_A:
+                                instruction = "sdiv";
+                                break;    
+                        case AcodeParser.MOD:
+                                instruction = "srem";
+                                break;
+                        case AcodeParser.MOD_A:
+                                instruction = "srem";
+                                break;               
                         case AcodeParser.EXP:
                                 instruction = "@iexp";
                                 code_stub = "<ret> = call i32 <instruction>(i32 <left_val>, i32 <right_val>)\n";
                                 break;
+                        case AcodeParser.EXP_A:
+                                instruction = "@iexp";
+                                code_stub = "<ret> = call i32 <instruction>(i32 <left_val>, i32 <right_val>)\n";
+                                break;        
                         case AcodeParser.AND:
                                 instruction = "and";
                         case AcodeParser.OR:
@@ -264,6 +361,63 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                 ret.addCode(template.render());
                 return ret;
                 
+        }
+        @Override
+        public CodeFragment visitOwn_ass(AcodeParser.Own_assContext ctx) {
+               CodeFragment code = visit(ctx.own_assign());
+                return code;
+        }
+
+         @Override
+        public CodeFragment visitOwn_assign(AcodeParser.Own_assignContext ctx) {
+            CodeFragment value = new CodeFragment();
+            String mem_register="";
+         //  System.err.println("ERR: "+ctx.lvalue().getText()+ctx.expression().getText()+ ctx.op.getType());
+           CodeFragment exp= new CodeFragment();
+           exp=visit(ctx.expression(0));
+           String identifier=ctx.expression(0).getText();
+           System.err.println("VAr"+ctx.expression(0).getText());
+             value=generateBinaryOperatorCodeFragment(
+                        visit(ctx.expression(0)),
+                        visit(ctx.expression(1)),
+                        ctx.op.getType()
+                );
+ System.err.println("ERR: "+value+"ERR");
+
+    int i=mem.size()-1;
+        while ((i>=0) && !mem.get(i).containsKey(identifier)) i--;
+                if (i>=0) {
+                        mem_register = mem.get(i).get(identifier);
+                }else{
+            System.err.println(String.format("Error: idenifier '%s' does not exists", identifier));
+        }
+
+               ST template = new ST(
+                        "<value_code>" + 
+                        "store i32 <value_register>, i32* <mem_register>\n"
+                );
+                template.add("value_code", value);
+                template.add("value_register", value.getRegister());
+                 
+                template.add("mem_register",mem_register);
+                CodeFragment ret = new CodeFragment();
+                ret.addCode(template.render());
+                ret.setRegister(value.getRegister());
+                System.err.println("RET"+ret);
+                return ret;
+
+          
+        }
+
+      
+
+        @Override
+        public CodeFragment visitCmp(AcodeParser.CmpContext ctx) {
+                return generateBinaryOperatorCodeFragment(
+                        visit(ctx.expression(0)),
+                        visit(ctx.expression(1)),
+                        ctx.op.getType()
+                );
         }
 
         @Override
@@ -349,11 +503,11 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                 return cf;
         }
 
-	/*@Override
+	@Override
         public CodeFragment visitBlock_st(AcodeParser.Block_stContext ctx) {
                 CodeFragment code = visit(ctx.block());
 		return code;
-        }*/
+        }
 
        /* @Override 
         public CodeFragment visitIf(AcodeParser.IfContext ctx) {
@@ -395,7 +549,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         @Override
         public CodeFragment visitWhile(AcodeParser.WhileContext ctx) {
                 CodeFragment condition = visit(ctx.expression());
-                CodeFragment body = visit(ctx.statements());
+                CodeFragment body = visit(ctx.block());
                 
                 ST template = new ST(
                         "br label %<cmp_label>\n" + 
@@ -424,6 +578,84 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                 ret.setRegister(end_register);
                 return ret;
         }
+
+      /*  public String type_str(Integer i){
+            String s="";
+            switch (i) {
+                        case AcodeParser.EQ:
+                                s = "eq";
+                                break;
+                        case AcodeParser.NE:
+                                s = "ne";
+                                break;                              
+                        case AcodeParser.LE:
+                                s = "le";
+                                break;
+                                
+                        case AcodeParser.LT:
+                                s = "ult";
+                                break;
+                        case AcodeParser.GE:
+                                s = "ge";                               
+                                break;                              
+                        case AcodeParser.GT:
+                                s = "gt";
+                                break;  
+            } 
+            return s;
+    }
+*/
+      @Override
+        public CodeFragment visitFor(AcodeParser.ForContext ctx) { 
+            CodeFragment ass_var=visit(ctx.assign_var());
+           // CodeFragment var =visit(ctx.expression(0));
+           // CodeFragment value =visit(ctx.expression(1));    
+            CodeFragment cmp=generateBinaryOperatorCodeFragment(
+                        visit(ctx.expression(0)),
+                        visit(ctx.expression(1)),
+                        ctx.op.getType()
+                );
+            System.err.println("OP"+ctx.op);
+            CodeFragment own_assign =visit(ctx.own_assign());
+            CodeFragment body =visit(ctx.block());
+            ST template = new ST(
+                        "<assign_var>"+
+                        "br label %<cmp_label>\n" + 
+                        "<cmp_label>:\n" + 
+                        "<cmp>" +
+                        //"<cmp_register> = icmp <op> i32 <var_register>, <value_register>\n" + 
+                        "br i1 <cmp_register>, label %<body_label>, label %<end_label>\n" + 
+                        "<body_label>:\n" + 
+                        "<body_code>" + 
+                        "<own_assign_code>"+
+                        "br label %<cmp_label>\n" + 
+                        "<end_label>:\n" + 
+                        "<ret> = add i32 0, 0\n"
+                );
+            template.add("assign_var", ass_var);
+             template.add("cmp_label", generateNewLabel());
+                template.add("cmp", cmp);
+               // template.add("op", type_str(ctx.op.getType()));
+                template.add("cmp_register", cmp.getRegister());
+            //    template.add("condition_register", cmp.getRegister());
+              //  template.add("var_register", ass_var.getRegister());
+              //  template.add("value_register", value.getRegister());
+                template.add("body_label", generateNewLabel());
+                template.add("end_label", generateNewLabel());
+                template.add("body_code", body);
+                template.add("own_assign_code", own_assign);
+                String end_register = generateNewRegister();
+                template.add("ret", end_register);
+
+
+
+               CodeFragment ret = new CodeFragment();
+                ret.addCode(template.render());
+                ret.setRegister(end_register);
+                System.err.println("FOR:"+ret+"FOR");
+                return ret;
+        }
+        
 
         @Override 
         public CodeFragment visitNot(AcodeParser.NotContext ctx) {
@@ -459,7 +691,8 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                 ST template = new ST(
                         "declare i32 @printInt(i32)\n" + 
                         "declare i32 @iexp(i32, i32)\n" + 
-			"<functions>" +
+                        "<extern_def>"+    
+			            "<functions>" +
                         "define i32 @main() {\n" + 
                         "start:\n" + 
                         "<body_code>" + 
@@ -468,6 +701,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                 );
 		template.add("functions", allFunctions());
                 template.add("body_code", body);
+                template.add("extern_def", extern_def);
 
                 CodeFragment code = new CodeFragment();
                 code.addCode(template.render());
