@@ -5,21 +5,33 @@ init: statements;
 statements: statement (NEWLINE statement)*;
 
 statement:
-     type lvalue ASSIGN expression ';'                  # AssignVar
+         assign_var            # AssVar
+     | own_assign              # Own_ass
      | lvalue ASSIGN expression ';'               	# Assign
      | expression                                       # Print
      | 'ret' expression	';' 				# Ret
-     | BLOCK_START statements BLOCK_END          	#Block
-     | IF expression statements ('elseif' expression statements )* ('else' statements)?  # If
-     | WHILE PAREN_OPEN expression PAREN_CLOSE statements    # While 
-     | FOR PAREN_OPEN statement expression';' own_assign PAREN_CLOSE statements	#For
-     | 'def' type name '(' args ')' BLOCK_START statements BLOCK_END		# FunctionDef
-     |                                                  # Emp
-     | own_assign (';')?	  			# OwnAssing
-     |'extern' 'def' type lvalue '('args')' ';' 	#Extern
+     | block         	#Block_st
+     | IF PAREN_OPEN expression op=(EQ| NE| LE| GE| GT| LT) expression PAREN_CLOSE block ('elseif' expression block )* ('else' block)?  # If
+     | WHILE PAREN_OPEN expression PAREN_CLOSE block    # While 
+     | FOR PAREN_OPEN assign_var
+                    expression op=(EQ| NE| LE| GE| GT| LT) expression';' 
+                    own_assign 
+           PAREN_CLOSE block 	#For
+     | 'def' type name '(' args ')' block		# FunctionDef
+     |                                                  # Emp     
+     |'extern' 'def' type name'('args')' ';' 	#Extern
      |'break' ';'					#Break
      ;
 
+block:BLOCK_START statements BLOCK_END ;
+assign_var: type lvalue ASSIGN expression (';')?  ;
+own_assign: expression op = ( ADD_A
+                        |SUB_A
+                        |MUL_A
+                        |DIV_A
+                        |MOD_A
+                        |EXP_A) expression (';')? 
+                        ;
 
 args: (type lvalue (',' type lvalue)*)?;
 lvalue: 
@@ -37,7 +49,6 @@ type:   ('void'|'int'|'str'|'bool'|'char'|'double') #basicType
 
 param_call: (expression (',' expression)*)? ;
 
-own_assign: lvalue op = ( '+='|'-='|'*=' |'/=' | '%=' |'^=') expression;
 
 expression:				
       op=('-'|'+') expression                            # Una
@@ -89,6 +100,13 @@ MUL: '*';
 DIV: '/';
 MOD: '%';
 EXP: '^';
+
+ADD_A:'+=';
+SUB_A:'-=';
+MUL_A:'*=';
+DIV_A:'/=';
+MOD_A: '%=';
+EXP_A: '^=';
 
 EQ: '==';
 NE: '!=';

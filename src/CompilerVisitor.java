@@ -538,15 +538,19 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
 		return code;
         }
 
-       /* @Override 
+        @Override 
         public CodeFragment visitIf(AcodeParser.IfContext ctx) {
-                CodeFragment condition = visit(ctx.expression());
-                CodeFragment statement_true = visit(ctx.statement(0));
-                CodeFragment statement_false = visit(ctx.statement(1));
+                CodeFragment condition = generateBinaryOperatorCodeFragment(
+                        visit(ctx.expression(0)),
+                        visit(ctx.expression(1)),
+                        ctx.op.getType()
+                );
+                CodeFragment statement_true = visit(ctx.block(0));
+                CodeFragment statement_false = visit(ctx.block(1));
 
                 ST template = new ST(
                         "<condition_code>" + 
-                        "<cmp_reg> = icmp ne i32 <con_reg>, 0\n" + 
+                        "<cmp_reg> = icmp ne i1 <con_reg>, 0\n" + 
                         "br i1 <cmp_reg>, label %<block_true>, label %<block_false>\n" +
                         "<block_true>:\n" +
                         "<statement_true_code>" +
@@ -573,7 +577,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
                 ret.addCode(template.render());
 
                 return ret;
-        }*/
+        }
 
         @Override
         public CodeFragment visitWhile(AcodeParser.WhileContext ctx) {
