@@ -9,7 +9,7 @@ statement:
      | own_assign              # Own_ass
      | lvalue ASSIGN expression ';'               	# Assign
      | expression                                       # Print
-     | 'ret' expression	';' 				# Ret
+     | 'ret' (expression)?	';' 				# Ret
      | block         	#Block_st
      | IF PAREN_OPEN expression op=(EQ| NE| LE| GE| GT| LT) expression PAREN_CLOSE block ('elseif' expression block )* ('else' block)?  # If
      | WHILE PAREN_OPEN expression PAREN_CLOSE block    # While 
@@ -24,7 +24,7 @@ statement:
      ;
 
 block:BLOCK_START statements BLOCK_END ;
-assign_var: type lvalue ASSIGN expression (';')?  ;
+assign_var: type lvalue (ASSIGN expression)? ';'  ;
 own_assign: expression op = ( ADD_A
                         |SUB_A
                         |MUL_A
