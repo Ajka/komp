@@ -182,15 +182,19 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         String type = ctx.type().getText(); 
         ret_type=type;
         CodeFragment args = visit(ctx.args());
-        CodeFragment body = visit(ctx.block());
+        CodeFragment body = new CodeFragment();
+        
 
         CodeFragment ret = new CodeFragment();
+        Function f = new Function(type,name,args.args_list(),ret);
+        functions.add(f);   
+
         ret.appendCodeFragment(args);
+        body=visit(ctx.block());
         ret.appendCodeFragment(body);
        
 
-        Function f = new Function(type,name,args.args_list(),ret);
-        functions.add(f);	
+       
 
               // ret.setRegister(body.getRegister());
         CodeFragment code = new CodeFragment();
@@ -214,7 +218,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
 	public CodeFragment visitFuncCall(AcodeParser.FuncCallContext ctx) {
 		String name = ctx.name().getText();	
 		CodeFragment param = visit(ctx.param_call());
-		Function f=null;
+		Function f= null;
         for(int i =0;i<extern_functions.size();i++){
             if(name.equals(extern_functions.get(i).name)){
                 f=extern_functions.get(i); 
@@ -555,9 +559,16 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
 
 	@Override
         public CodeFragment visitRet(AcodeParser.RetContext ctx) {
-		CodeFragment code = visit(ctx.expression());           
-                code.addCode(String.format("ret %s %s\n",Variable.getLLVMType(ret_type),code.getRegister()));
-                return code;
+		CodeFragment code = new CodeFragment();
+                
+        if(ret_type.equals("void")){
+            code.addCode(String.format("ret void\n"));
+        }   else{
+            code=visit(ctx.expression()); 
+             code.addCode(String.format("ret %s %s\n",Variable.getLLVMType(ret_type),code.getRegister()));
+        }      
+       
+        return code;
         }
 
         @Override 

@@ -1,23 +1,13 @@
-int x:=2;
-int y:=3;
-def int add(int a,int b){
-	int c := a + b;	
-	ret c;
-}
-add(x,y+1);
+extern def void print(int j);
 
-def int pr(int x){
-	int i:=1;
-	while (i - 10) {
-      	  i := i + 1;	
+def void add(int a,int b){
+	if(a>3){
+	ret;	
 	}
-	ret x+i;
+	print(a+b);
+	add(a+1,b+1);
+	ret;
 }
-int t:=15;
 
-for(int i:=0;i*i<25;i+=1){
-int k :=i-10;
-pr(k);
-}
-pr(t);
 
+add(1,1);
