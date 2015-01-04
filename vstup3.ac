@@ -1,0 +1,31 @@
+extern def void print(int x);
+extern def int read();
+    
+
+int n:=read();
+
+    int[n] A;
+    
+    for (int i := 0; i < n; i+=1) {
+	A[i]:=read();
+    }
+	
+    for (int i := 0; i < n; i+=1) {
+	
+	for (int j := i+1; j < n; j+=1) {
+		int x:=A[i];
+		int y:=A[j];
+		if(x>y){
+			int tmp:=A[i];
+			A[i]:=A[j];
+			A[j]:=tmp;	
+		}
+	}
+	
+    }	
+
+
+    for (int i := 0; i < n; i+=1) {
+	int k:=A[i];
+	print(k);
+    }

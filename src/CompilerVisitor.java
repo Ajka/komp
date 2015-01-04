@@ -35,45 +35,19 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         String store_code= "";
         String id ="";
         String offset="";
-
-        String val = ctx.expression().getText();
-        if(val.contains("[")){
-                String val_register="";
-                String register = "";
-                String val_id=val.substring(0,val.indexOf("["));
-                int i=mem.size()-1;
-                while ((i>=0) && !mem.get(i).containsKey(val_id)) i--;
-                if (i>=0) {
-                    val_register = mem.get(i).get(val_id).register;
-                //type = mem.get(i).get(identifier).type;
-                }else{
-                    System.err.println(String.format("Error: idenifier '%s' does not exists", val_id));
-                }
-                offset=array_size(val);
-                System.err.println(offset+"offset");
-                if(offset.contains("%")){
-                    store_code="<load_reg>=load i32* " +offset+"\n<register> = getelementptr i32* "+val_register+", i32 <load_reg> \n<new_register>= load i32* <register>\nstore i32 <new_register>, i32* <mem_register>\n";
-                }else{
-                   store_code="<register> = getelementptr i32* "+val_register+", i32 <offset> \n<new_register>= load i32* <register>\nstore i32 <new_register>, i32* <mem_register>\n";
-                }
-
-        }else{
-            value = visit(ctx.expression()); 
-            store_code="store <type> <value_register>, <type>* <mem_register>\n";
-        }   
-
+        
         String identifier = ctx.lvalue().getText();
 
-        int i=mem.size()-1;
+        int x=mem.size()-1;
         if(identifier.contains("[")){
             id=identifier.substring(0,identifier.indexOf("["));
         }else{
             id=identifier;
         }
-        while ((i>=0) && !mem.get(i).containsKey(id)) i--;
-        if (i>=0) {
-            mem_register = mem.get(i).get(id).register;
-            type = mem.get(i).get(id).type;
+        while ((x>=0) && !mem.get(x).containsKey(id)) x--;
+        if (x>=0) {
+            mem_register = mem.get(x).get(id).register;
+            type = mem.get(x).get(id).type;
             System.err.println("search:"+id+" mem_register "+mem_register);
         }else{
             System.err.println(String.format("Error: idenifier '%s' does not exists", identifier));
@@ -82,28 +56,73 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
 
         
         if (identifier.contains("[")){
-
             size=array_size(identifier);
-            String lval_id=identifier.substring(identifier.indexOf("[")+1,identifier.indexOf("]"));
-            int j=mem.size()-1;
-            while ((j>=0) && !mem.get(j).containsKey(lval_id)) j--;
-            if (j>=0) {
-                System.err.println("search:"+lval_id);
-                lval_register = mem.get(j).get(lval_id).register;
-              // System.err.println("r:"+lval_register);
-             
-            }
-
             //System.err.println("size:"+size);
-            if(size.contains("%")){
-                code_stub="<load_reg>=load i32* "+size+"\n<new_register> = getelementptr i32* <mem_register>, i32 <load_reg>\n";
-            }else{
+            //if(size.contains("%")){
+                code_stub="<load_register>=load i32* "+size+"\n<new_register> = getelementptr i32* <mem_register>, i32 <load_register>\n";
+               // store_code="store4 i32 <value_register>, i32* <new_register>\n";
+                String val = ctx.expression().getText();
+                if(val.contains("[")){
+                    String val_register="";
+                    String register = "";
+                    String val_id=val.substring(0,val.indexOf("["));
+                    int i=mem.size()-1;
+                    while ((i>=0) && !mem.get(i).containsKey(val_id)) i--;
+                    if (i>=0) {
+                        val_register = mem.get(i).get(val_id).register;
+                //type = mem.get(i).get(identifier).type;
+                    }else{
+                        System.err.println(String.format("Error: idenifier '%s' does not exists", val_id));
+                    }
+                    offset=array_size(val);
+                    System.err.println(offset+"offset");
+                    if(offset.contains("%")){
+                        store_code="<load_reg>=load i32* " +offset+"\n<register> = getelementptr i32* "+val_register+", i32 <load_reg> \n<new_register2>= load i32* <register>\nstore i32 <new_register2>, i32* <new_register>\n";
+                    }else{
+                     store_code="<register> = getelementptr i32* "+val_register+", i32 <offset> \n<new_register2>= load i32* <register>\nstore i32 <new_register2>, i32* <new_register>\n";
+                    }
+
+                }else{
+                    value = visit(ctx.expression()); 
+                    store_code="store i32 <value_register>, i32* <new_register>\n";
+                }  
+
+            /*}else{
                 code_stub="<new_register> = getelementptr i32* <mem_register>, i32 <size>\n";
-            }
+                //store_code="store5 i32 <value_register>, i32* <new_register>\n";
+            }*/
            // code_stub="<new_register> = getelementptr i32* <mem_register>, i32 <size>\n";
-            store_code="store i32 <value_register>, i32* <new_register>\n";
+       //  store_code="sto i32 <value_register>, i32* <new_register>\n";//*valReg*
+
+        }else{
+              String val = ctx.expression().getText();
+                if(val.contains("[")){
+                    String val_register="";
+                    String register = "";
+                    String val_id=val.substring(0,val.indexOf("["));
+                    int i=mem.size()-1;
+                    while ((i>=0) && !mem.get(i).containsKey(val_id)) i--;
+                    if (i>=0) {
+                        val_register = mem.get(i).get(val_id).register;
+                //type = mem.get(i).get(identifier).type;
+                    }else{
+                        System.err.println(String.format("Error: idenifier '%s' does not exists", val_id));
+                    }
+                    offset=array_size(val);
+                    System.err.println(offset+"offset");
+                    if(offset.contains("%")){
+                        store_code="<load_reg>=load i32* " +offset+"\n<register> = getelementptr i32* "+val_register+", i32 <load_reg> \n<new_register2>= load i32* <register>\nstore i32 <new_register2>, i32* <mem_register>\n";
+                    }else{
+                     store_code="<register> = getelementptr i32* "+val_register+", i32 <offset> \n<new_register2>= load i32* <register>\nstore i32 <new_register2>, i32* <mem_register>\n";
+                    }
+
+                }else{
+                    value = visit(ctx.expression()); 
+                    store_code="store <type> <value_register>, <type>* <mem_register>\n";
+                } 
 
         }
+ 
 
        
         CodeFragment ret = new CodeFragment();
@@ -119,6 +138,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
             template.add("value_code", value);
             template.add("value_register", value.getRegister());
             ret.setRegister(value.getRegister());
+           // store_code="store i32 <value_register>, i32* <new_register>\n";
 
         }
 
@@ -127,7 +147,9 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         template.add("type", Variable.getLLVMType(type));
         template.add("mem_register", mem_register);
         template.add("new_register",generateNewRegister());
+        template.add("new_register2",generateNewRegister());
         template.add("load_reg",generateNewRegister());
+        template.add("load_register",generateNewRegister());
         template.add("size", size);
         template.add("lval_register", lval_register);
         template.add("offset",offset);
@@ -213,7 +235,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
             mem_register = this.generateNewRegister();
             code_stub = "<mem_register> = alloca <type>\n";
             if(type.contains("[")){
-                code_stub = "<mem_register> = alloca i32, i32 <size>\n";
+                code_stub = "<r>=load i32* <size>\n<mem_register> = alloca i32, i32 <r>\n";
                 size = array_size(type);
             }
             mem.get(mem.size()-1).put(identifier, new Variable(mem_register, type));
@@ -244,7 +266,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         template.add("register",generateNewRegister());
         template.add("new_register",generateNewRegister());
         template.add("load_reg",generateNewRegister());
-
+        template.add("r",generateNewRegister());
         
         ret.addCode(template.render());
         
@@ -315,22 +337,7 @@ public class CompilerVisitor extends AcodeBaseVisitor<CodeFragment> {
         return ret;
     }
 
-   /* public String type_code(String type){
-        String t = "";
-         switch (type) {
-            case "int":
-                t="i32";
-                break;
-            case "void":
-                t = "void";
-                break;
-            case "bool":
-                t = "i1";
-                break;    
-        }
 
-        return t;
-    }*/
 
     @Override
     public CodeFragment visitFunctionDef(AcodeParser.FunctionDefContext ctx) {
